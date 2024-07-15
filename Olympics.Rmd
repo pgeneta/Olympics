@@ -38,7 +38,7 @@ full <- left_join(df_athletes, df_region, by="NOC")
 
 #Visualise dataset
 
-vis <- function(data){
+vis <- function(data, seas = c("Summer", "Winter")){
   
   top_noc <- data %>% 
   group_by(NOC) %>% 
@@ -49,14 +49,23 @@ vis <- function(data){
   
   
   df <- data %>% 
-    filter(NOC %in% top_noc) %>% 
+    filter(NOC %in% top_noc,
+           Season == seas) %>% 
     group_by(Year, NOC) %>% 
-    summarise(count = n()) %>% 
+    summarise(count = n(), .groups = "keep") %>% 
     ungroup() %>% 
-    ggplot(aes(x = Year, y=count, color = NOC)) + geom_line(alpha = 0.6)+
-    labs(title = paste0("Top 5 Participation of countries - Olympics"))+
+    group_by(NOC) %>% 
+    mutate(label = ifelse(row_number() == n(), count, NA)) %>% 
+    ungroup() %>% 
+    arrange(Year, NOC) %>% 
+    ggplot(aes(x = Year, y=count, color = NOC, label = label)) + 
+    geom_line(alpha = 0.6, linewidth = 1)+
+    geom_text(nudge_x = 3, size = 4)+
+    labs(title = paste0("Top 5 Country Participation - ", seas, " Olympics"))+
     ylab("Number of athletes")+
-    theme_bw()
+    theme_bw()+
+    theme(legend.position = "bottom",
+          legend.title = element_blank())
   
 return(df)
 
@@ -65,10 +74,14 @@ return(df)
 
 
 ```{r}
-vis(full %>% filter(Season == "Winter"))
+#vis(full %>% filter(Season == "Winter"))
+vis(full, "Winter")
 ```
+
+
 ```{r}
-vis(full %>% filter(Season == "Summer"))
+#vis(full %>% filter(Season == "Summer"))
+vis(full, "Summer")
 ```
 
 
